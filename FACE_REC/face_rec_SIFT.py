@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Load the input image
-input_image = cv2.imread('FACE_REC/eval/2023-08-21-112250.jpg', cv2.IMREAD_GRAYSCALE)
+input_image = cv2.imread('FACE_REC/eval/007_cabbfcbb.jpg', cv2.IMREAD_GRAYSCALE)
 
 # Get a list of dataset image paths from the 'dataset' folder
 dataset_folder = 'FACE_REC/dataset'
@@ -34,7 +34,7 @@ for dataset_image_path in dataset_image_paths:
     # Apply ratio test to find good matches
     good_matches = []
     for m, n in matches:
-        if m.distance < 0.75 * n.distance:
+        if m.distance < 0.55 * n.distance:
             good_matches.append(m)
     
     # Calculate the distance of good matches
