@@ -7,7 +7,7 @@ input_image = cv2.imread('FACE_REC/eval/2023-08-21-103345.jpg', cv2.IMREAD_GRAYS
 cv2.imshow('Input image', input_image)
 
 # Get a list of dataset image paths from the 'dataset' folder
-dataset_folder = 'FACE_REC/dataset'
+dataset_folder = 'FACE_REC/dataset/new_db'
 dataset_image_paths = [os.path.join(dataset_folder, filename) for filename in os.listdir(dataset_folder)]
 
 # Initialize ORB detector and descriptor
@@ -19,7 +19,7 @@ keypoints_input, descriptors_input = orb.detectAndCompute(input_image, None)
 # Create FLANN index with ORB descriptors
 index_params = dict(algorithm=6,    # FLANN_INDEX_LSH
                     table_number=6,  # 6 hash tables
-                    key_size=12,     # 12 bits for key
+                    key_size=15,     # 12 bits for key
                     multi_probe_level=1)  # Multi-probe level 1
 
 search_params = dict(checks=50)  # Number of checks for each query
@@ -57,6 +57,7 @@ for dataset_image_path in dataset_image_paths:
         best_match_image = dataset_image
 
 # Display the best match image
+best_match_image = cv2.resize(best_match_image, (500, 500))
 cv2.imshow('Best Match Image', best_match_image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

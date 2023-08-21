@@ -3,10 +3,11 @@ import numpy as np
 import os
 
 # Load the input image
-input_image = cv2.imread('FACE_REC/eval/2023-08-21-112250.jpg', cv2.IMREAD_GRAYSCALE)
+input_image = cv2.imread('FACE_REC/eval/2023-08-21-105001.jpg', cv2.IMREAD_GRAYSCALE)
+cv2.imshow('Input image', input_image)
 
 # Get a list of dataset image paths from the 'dataset' folder
-dataset_folder = 'FACE_REC/dataset'
+dataset_folder = 'FACE_REC/dataset/new_db'
 dataset_image_paths = [os.path.join(dataset_folder, filename) for filename in os.listdir(dataset_folder)]
 
 # Initialize SIFT detector and descriptor
@@ -34,7 +35,7 @@ for dataset_image_path in dataset_image_paths:
     # Apply ratio test to find good matches
     good_matches = []
     for m, n in matches:
-        if m.distance < 0.75 * n.distance:
+        if m.distance < 0.70 * n.distance:
             good_matches.append(m)
     
     # Calculate the distance of good matches
@@ -49,6 +50,7 @@ for dataset_image_path in dataset_image_paths:
         best_match_image = dataset_image
 
 # Display the best match image
+best_match_image = cv2.resize(best_match_image, (500, 500))
 cv2.imshow('Best Match Image', best_match_image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
