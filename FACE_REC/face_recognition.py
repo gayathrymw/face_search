@@ -3,7 +3,8 @@ import numpy as np
 import os
 
 # Load the input image
-input_image = cv2.imread('FACE_REC/2023-08-21-104257.jpg', cv2.IMREAD_GRAYSCALE)
+input_image = cv2.imread('FACE_REC/eval/2023-08-21-103345.jpg', cv2.IMREAD_GRAYSCALE)
+cv2.imshow('Input image', input_image)
 
 # Get a list of dataset image paths from the 'dataset' folder
 dataset_folder = 'FACE_REC/dataset'
