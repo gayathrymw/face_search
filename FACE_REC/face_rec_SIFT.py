@@ -14,6 +14,7 @@ def detect_and_crop_face(image, face_cascade):
 face_cascade = cv2.CascadeClassifier('FACE_REC/haar_face.xml')
 
 # Load the input image
+
 input_image = cv2.imread('FACE_REC/eval/2023-08-21-104257.jpg', cv2.IMREAD_GRAYSCALE)
 cropped_input = detect_and_crop_face(input_image, face_cascade)
 cv2.imshow('Cropped Input', cropped_input)
@@ -47,7 +48,7 @@ for dataset_image_path in dataset_image_paths:
     # Apply ratio test to find good matches
     good_matches = []
     for m, n in matches:
-        if m.distance < 0.75 * n.distance:
+        if m.distance < 0.55 * n.distance:
             good_matches.append(m)
     
     # Calculate the distance of good matches
