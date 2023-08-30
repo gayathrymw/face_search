@@ -43,7 +43,7 @@ def match_faces(embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset/dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/eval/2023-08-21-105001.jpg'
+    query_image_path = 'eval/eval/44bd93f4a1.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -96,7 +96,7 @@ def main():
 
             similar_image_path = os.path.join(dataset_dir, user_id + '.jpg')
             similar_image = cv2.imread(similar_image_path)
-
+            print(f"Similar Image Filename: {user_id}.jpg")
             cv2.imshow("Similar Image", similar_image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
