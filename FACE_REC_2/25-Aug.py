@@ -41,9 +41,9 @@ def match_faces(embeddings, query_embedding):
     return similarities
 
 def main():
-    dataset_dir = 'dataset/dataset'
+    dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/eval/44bd93f4a1.jpg'
+    query_image_path = 'eval/44bd93f4a1.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -88,6 +88,9 @@ def main():
 
     sorted_similarities = sorted(
         similarities.items(), key=lambda x: x[1], reverse=True)
+    
+
+    cv2.imshow("Query Image", query_image)
 
     print("Similar images:")
     for user_id, similarity in sorted_similarities:
