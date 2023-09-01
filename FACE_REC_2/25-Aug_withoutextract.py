@@ -99,6 +99,7 @@ def main():
 
             similar_image_path = os.path.join(dataset_dir, user_id + '.jpg')
             similar_image = cv2.imread(similar_image_path)
+            similar_image = cv2.resize(similar_image, (800, 600))
 
             print(f"Similar Image Filename: {user_id}.jpg")
 
