@@ -42,7 +42,7 @@ def match_faces(embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Udit Narayan_Image_10.jpg'
+    query_image_path = 'eval/4e9838e8ff.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
