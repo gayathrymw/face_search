@@ -38,28 +38,28 @@ def match_faces(embeddings, query_embedding):
             [query_embedding], [reference_embedding])[0][0]
         similarities[user_id] = similarity
     return similarities
-
-
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
+<<<<<<< HEAD
     query_image_path = 'eval/44770da9-c475-480a-b403-e6a2aefb25b4.jpeg'
+=======
+    query_image_path = 'eval/download.jpeg'
+>>>>>>> b56b7f6033db7d3216be710cbfea5a09a64f8a0d
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
 
-    # Load pre-existing embeddings
     embeddings = load_embeddings(embeddings_dir)
     
     if not os.path.exists(embeddings_dir):
         os.makedirs(embeddings_dir)
 
-    # Process the dataset images and extract embeddings
     for filename in os.listdir(dataset_dir):
         if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
             user_id = os.path.splitext(filename)[0]
             if user_id in embeddings:
-                print(f"Embedding already exists for {filename}. Skipping.")
+                #print(f"Embedding already exists for {filename}. Skipping.")
                 continue
             
             image_path = os.path.join(dataset_dir, filename)
@@ -67,7 +67,7 @@ def main():
             faces = recognize_face(image, face_detector)
 
             if not faces:
-                print(f"No faces found in {filename}. Skipping.")
+                #print(f"No faces found in {filename}. Skipping.")
                 continue
 
             aligned_face = align_face(image, faces[0])
@@ -78,18 +78,16 @@ def main():
 
             print(f"Embedding saved for {filename}")
 
-    # Load and preprocess the query image
     query_image = cv2.imread(query_image_path)
     query_faces = recognize_face(query_image, face_detector)
 
     if not query_faces:
-        print("No faces found in the query image.")
+        #print("No faces found in the query image.")
         return
 
     aligned_face = align_face(query_image, query_faces[0])
     query_embedding = extract_embeddings(face_recognizer, aligned_face)
 
-    # Match query embedding with dataset embeddings
     similarities = match_faces(embeddings, query_embedding)
 
     sorted_similarities = sorted(
