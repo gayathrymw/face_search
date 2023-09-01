@@ -38,8 +38,6 @@ def match_faces(embeddings, query_embedding):
             [query_embedding], [reference_embedding])[0][0]
         similarities[user_id] = similarity
     return similarities
-
-
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
