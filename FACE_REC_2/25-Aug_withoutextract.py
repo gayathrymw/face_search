@@ -43,18 +43,16 @@ def match_faces(embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/44770da9-c475-480a-b403-e6a2aefb25b4.jpeg'
+    query_image_path = 'eval/Dulquer-Salman-net-worth-1600x900.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
 
-    # Load pre-existing embeddings
     embeddings = load_embeddings(embeddings_dir)
     
     if not os.path.exists(embeddings_dir):
         os.makedirs(embeddings_dir)
 
-    # Process the dataset images and extract embeddings
     for filename in os.listdir(dataset_dir):
         if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
             user_id = os.path.splitext(filename)[0]
@@ -77,8 +75,6 @@ def main():
             np.save(embedding_path, embedding)
 
             print(f"Embedding saved for {filename}")
-
-    # Load and preprocess the query image
     query_image = cv2.imread(query_image_path)
     query_faces = recognize_face(query_image, face_detector)
 
@@ -89,7 +85,6 @@ def main():
     aligned_face = align_face(query_image, query_faces[0])
     query_embedding = extract_embeddings(face_recognizer, aligned_face)
 
-    # Match query embedding with dataset embeddings
     similarities = match_faces(embeddings, query_embedding)
 
     sorted_similarities = sorted(
