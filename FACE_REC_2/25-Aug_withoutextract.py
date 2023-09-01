@@ -41,11 +41,8 @@ def match_faces(embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-<<<<<<< HEAD
+
     query_image_path = 'eval/44770da9-c475-480a-b403-e6a2aefb25b4.jpeg'
-=======
-    query_image_path = 'eval/download.jpeg'
->>>>>>> b56b7f6033db7d3216be710cbfea5a09a64f8a0d
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
