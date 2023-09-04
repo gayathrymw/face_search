@@ -3,14 +3,11 @@ import cv2
 import numpy as np
 import dlib
 from sklearn.metrics.pairwise import cosine_similarity
-import time
-
-
+from sklearn.cluster import KMeans  # Import KMeans clustering
 COSINE_THRESHOLD = 0.5
 
 def extract_embeddings(face_recognizer, aligned_face):
     embedding = face_recognizer.compute_face_descriptor(aligned_face)
-    #print("hai")
     return np.array(embedding)
 
 def recognize_face(image, face_detector):
@@ -35,35 +32,24 @@ def load_embeddings(embeddings_dir):
             embeddings[user_id] = embedding
     return embeddings
 
-def match_faces(embeddings, query_embedding):
-    similarities = {}
-    for user_id, reference_embedding in embeddings.items():
-        similarity = cosine_similarity(
-            [query_embedding], [reference_embedding])[0][0]
-        similarities[user_id] = similarity
-    return similarities
-
-# def match_faces(embeddings, query_embedding):
-#     reference_embeddings = np.array(list(embeddings.values()))
-#     index = faiss.IndexFlatL2(reference_embeddings.shape[1])
-#     index.add(reference_embeddings.astype('float32'))
-
-#     query_embedding = np.array([query_embedding]).astype('float32')
-#     k = len(embeddings)
-#     D, I = index.search(query_embedding, k)
-
-#     similarities = {}
-#     for distance, user_id in zip(D[0], I[0]):
-#         similarity = 1 / (1 + distance)  
-#         similarities[user_id] = similarity
-#     return similarities
+def cluster_embeddings(embeddings, num_clusters):
+    embeddings_list = list(embeddings.values())
+    kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(embeddings_list)
+    cluster_labels = kmeans.labels_
+    
+    clusters = {}
+    for user_id, embedding in zip(embeddings.keys(), cluster_labels):
+        if embedding not in clusters:
+            clusters[embedding] = []
+        clusters[embedding].append(user_id)   
+    return clusters
 
 def main():
-
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/yama buddha_Image_53.jpg'
-
+    query_image_path = 'eval/Priyanka Karki_3.jpg'
+    num_clusters = 5
+    
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
 
@@ -71,6 +57,8 @@ def main():
     
     if not os.path.exists(embeddings_dir):
         os.makedirs(embeddings_dir)
+
+    clusters = cluster_embeddings(embeddings, num_clusters)  # Perform k-means clustering
 
     for filename in os.listdir(dataset_dir):
         if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
@@ -104,14 +92,25 @@ def main():
 
     aligned_face = align_face(query_image, query_faces[0])
     query_embedding = extract_embeddings(face_recognizer, aligned_face)
-    start = time.time()
-    similarities = match_faces(embeddings, query_embedding)
+
+    # Find the cluster of the query face
+    query_embedding_list = list(embeddings.values())
+    query_embedding_list.append(query_embedding)
+    kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(query_embedding_list)
+    query_cluster = kmeans.labels_[-1]
+
+    # Search only in the cluster of the query face
+    cluster_to_search = clusters[query_cluster]
+
+    similarities = {}
+    for user_id in cluster_to_search:
+        reference_embedding = embeddings[user_id]
+        similarity = cosine_similarity([query_embedding], [reference_embedding])[0][0]
+        similarities[user_id] = similarity
 
     sorted_similarities = sorted(
         similarities.items(), key=lambda x: x[1], reverse=True)
-    
-    # cv2.imshow("Query Image", query_image)
-    #print("hai")
+
     for user_id, similarity in sorted_similarities:
         if similarity >= COSINE_THRESHOLD:
             print(f"User ID: {user_id}, Similarity: {similarity:.4f}")
@@ -122,14 +121,9 @@ def main():
             print(f"Similar Image Filename: {user_id}.jpg")
 
             cv2.imshow("Similar Image", similar_image)
-            end = time.time()
-            print("The time of execution of above program is :",(end-start) * 10**3, "ms")
-
-            #cv2.resize(similar_image, (100, 100))
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             break
 
 if __name__ == '__main__':
     main()
-    
