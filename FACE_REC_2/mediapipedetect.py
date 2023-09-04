@@ -29,10 +29,10 @@ def recognize_face(image):
     bounding_box = results.detections[0].location_data.relative_bounding_box
     x, y, width, height = int(bounding_box.xmin * w), int(bounding_box.ymin * h), int(bounding_box.width * w), int(bounding_box.height * h)
     
-    return [dlib.rectangle(left=x, top=y, right=x+width, bottom=y+height)]  # Convert to dlib rectangle for compatibility
+    return [dlib.rectangle(left=x, top=y, right=x+width, bottom=y+height)] 
 
 def extract_embeddings(face_recognizer, image, face_rectangle):
-    shape_predictor = dlib.shape_predictor("model/shape_data")  # Assuming you have the shape predictor model
+    shape_predictor = dlib.shape_predictor("model/shape_data")
     landmarks = shape_predictor(image, face_rectangle)
     embedding = face_recognizer.compute_face_descriptor(image, landmarks)
     return np.array(embedding)
@@ -60,29 +60,22 @@ def align_face(image, face):
     '''
 
 def get_landmarks(image):
-    """
-    Get facial landmarks using mediapipe.
-    """
+
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = face_mesh.process(image_rgb)
 
     if not results.multi_face_landmarks:
         return []
 
-    # Use the first face's landmarks for simplicity
     landmarks = results.multi_face_landmarks[0].landmark
     return [(int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0])) for landmark in landmarks]
 
 def align_face(image):
-    """
-    Align face using landmarks from mediapipe.
-    Here, we will just return the cropped face for simplicity. You can use Affine transformations for precise alignment.
-    """
+
     landmarks = get_landmarks(image)
     if not landmarks:
         return None
 
-    # For simplicity, we will use the outer landmarks to determine the bounding box of the face
     x_coords = [point[0] for point in landmarks]
     y_coords = [point[1] for point in landmarks]
     x, y, w, h = min(x_coords), min(y_coords), max(x_coords) - min(x_coords), max(y_coords) - min(y_coords)
@@ -111,7 +104,7 @@ def match_faces(embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/download.jpeg'
+    query_image_path = 'eval/Reecha Sharma_Image_14.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -119,8 +112,6 @@ def main():
     if not os.path.exists(embeddings_dir):
         os.makedirs(embeddings_dir)
 
-    
-    # Load and preprocess the query image
     query_image = cv2.imread(query_image_path)
     query_faces = recognize_face(query_image)
 
@@ -128,15 +119,13 @@ def main():
         #print("No faces found in the query image.")
         return
     
-    query_embedding = extract_embeddings(face_recognizer, query_image, query_faces[0])  # for query image
+    query_embedding = extract_embeddings(face_recognizer, query_image, query_faces[0])  
 
-    # Process the dataset images and extract embeddings
     for filename in os.listdir(dataset_dir):
         if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
             user_id = os.path.splitext(filename)[0]
             embedding_path = os.path.join(embeddings_dir, f"{user_id}.npy")
 
-            # Check if embedding already exists
             if os.path.exists(embedding_path):
                 #print(f"Embedding for {filename} already exists. Skipping.")
                 continue
@@ -149,7 +138,7 @@ def main():
                 #print(f"No faces found in {filename}. Skipping.")
                 continue
 
-            embedding = extract_embeddings(face_recognizer, image, faces[0])  # for dataset images and query image
+            embedding = extract_embeddings(face_recognizer, image, faces[0])  
             np.save(embedding_path, embedding)
             print(f"Embedding saved for {filename}")
 
