@@ -31,6 +31,7 @@ def load_embeddings(embeddings_dir):
             embedding = np.load(os.path.join(embeddings_dir, filename))
             embeddings[user_id] = embedding
     return embeddings
+
 def match_faces(embeddings, query_embedding):
     similarities = {}
     for user_id, reference_embedding in embeddings.items():
@@ -42,6 +43,7 @@ def match_faces(embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
+
     query_image_path = 'eval/VR3.png'
 
     face_detector = dlib.get_frontal_face_detector()
