@@ -1,55 +1,66 @@
 import os
 import cv2
 import numpy as np
-import mediapipe as mp
-from sklearn.metrics.pairwise import cosine_similarity
+import dlib
+import faiss
 
-COSINE_THRESHOLD = 0.5
+# Define the threshold for similarity
+SIMILARITY_THRESHOLD = 0.5
 
-def extract_embeddings(face_mesh, image, face):
-    # Extract face landmarks using MediaPipe Face Mesh
-    results = face_mesh.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    if results.multi_face_landmarks:
-        landmarks = results.multi_face_landmarks[0].landmark
-        landmarks = [(int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0])) for landmark in landmarks]
-
-        # Draw landmarks on the face (optional)
-        for landmark in landmarks:
-            cv2.circle(image, landmark, 2, (0, 255, 0), -1)
-
-        # Extract embeddings (you may need to customize this part)
-        embedding = np.array([landmark.x for landmark in landmarks] + [landmark.y for landmark in landmarks])
-
-        return embedding
-    else:
-        return None
+def extract_embeddings(face_recognizer, aligned_face):
+    embedding = face_recognizer.compute_face_descriptor(aligned_face)
+    return np.array(embedding)
 
 def recognize_face(image, face_detector):
-    # Use MediaPipe Face Detection for face detection
-    results = face_detector.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    faces = []
-    if results.detections:
-        for detection in results.detections:
-            bboxC = detection.location_data.relative_bounding_box
-            ih, iw, _ = image.shape
-            x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
-            faces.append(dlib.rectangle(left=x, top=y, right=x+w, bottom=y+h))
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = face_detector(gray)
     return faces
+
+def align_face(image, face):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    shape_predictor = dlib.shape_predictor("model/shape_data")
+    landmarks = shape_predictor(gray, face)
+
+    aligned_face = dlib.get_face_chip(image, landmarks)
+    return aligned_face
+
+def load_embeddings(embeddings_dir):
+    embeddings = {}
+    for filename in os.listdir(embeddings_dir):
+        if filename.endswith('.npy'):
+            user_id = os.path.splitext(filename)[0]
+            embedding = np.load(os.path.join(embeddings_dir, filename))
+            embeddings[user_id] = embedding
+    return embeddings
+
+def build_faiss_index(embeddings):
+    # Create a Faiss index and add reference embeddings to it
+    d = len(list(embeddings.values())[0])  # Dimension of the embeddings
+    index = faiss.IndexFlatL2(d)  # Use L2 (Euclidean) distance
+
+    embeddings_list = list(embeddings.values())
+    embeddings_array = np.array(embeddings_list).astype('float32')
+    
+    index.add(embeddings_array)
+
+    return index
+
+def search_faiss_index(index, query_embedding):
+    # Search for similar embeddings in the Faiss index
+    D, I = index.search(np.array([query_embedding]).astype('float32'), index.ntotal)
+
+    return D[0], I[0]
 
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/1137877401.jpg'
+    query_image_path = 'eval/Saugat Malla_Image_42.jpg'
 
-    mp_face_detection = mp.solutions.face_detection
-    mp_face_mesh = mp.solutions.face_mesh
-
-    # Initialize MediaPipe Face Detection and Face Mesh
-    face_detection = mp_face_detection.FaceDetection(min_detection_confidence=0.2)
-    face_mesh = mp_face_mesh.FaceMesh()
+    face_detector = dlib.get_frontal_face_detector()
+    face_recognizer = dlib.face_recognition_model_v1('model/data')
 
     embeddings = load_embeddings(embeddings_dir)
-
+    
     if not os.path.exists(embeddings_dir):
         os.makedirs(embeddings_dir)
 
@@ -58,43 +69,42 @@ def main():
             user_id = os.path.splitext(filename)[0]
             if user_id in embeddings:
                 continue
-
+            
             image_path = os.path.join(dataset_dir, filename)
             image = cv2.imread(image_path)
-
-            faces = recognize_face(image, face_detection)
+            faces = recognize_face(image, face_detector)
 
             if not faces:
                 continue
 
             aligned_face = align_face(image, faces[0])
-            embedding = extract_embeddings(face_mesh, aligned_face, faces[0])
+            embedding = extract_embeddings(face_recognizer, aligned_face)
 
-            if embedding is not None:
-                embedding_path = os.path.join(embeddings_dir, f"{user_id}.npy")
-                np.save(embedding_path, embedding)
+            embedding_path = os.path.join(embeddings_dir, f"{user_id}.npy")
+            np.save(embedding_path, embedding)
 
-                print(f"Embedding saved for {filename}")
+            print(f"Embedding saved for {filename}")
 
     query_image = cv2.imread(query_image_path)
-    query_faces = recognize_face(query_image, face_detection)
+    query_faces = recognize_face(query_image, face_detector)
 
     if not query_faces:
         return
 
     aligned_face = align_face(query_image, query_faces[0])
-    query_embedding = extract_embeddings(face_mesh, aligned_face, query_faces[0])
+    query_embedding = extract_embeddings(face_recognizer, aligned_face)
 
-    similarities = match_faces(embeddings, query_embedding)
+    # Build the Faiss index
+    index = build_faiss_index(embeddings)
 
-    sorted_similarities = sorted(
-        similarities.items(), key=lambda x: x[1], reverse=True)
-
-    cv2.imshow("Query Image", query_image)
+    # Search for similar faces in the Faiss index
+    distances, indices = search_faiss_index(index, query_embedding)
 
     print("Similar images:")
-    for user_id, similarity in sorted_similarities:
-        if similarity >= COSINE_THRESHOLD:
+    for i, idx in enumerate(indices):
+        similarity = distances[i]  # Using L2 (Euclidean) distance as similarity
+        if similarity <= SIMILARITY_THRESHOLD:
+            user_id = os.path.splitext(os.listdir(dataset_dir)[idx])[0]
             print(f"User ID: {user_id}, Similarity: {similarity:.4f}")
 
             similar_image_path = os.path.join(dataset_dir, user_id + '.jpg')
