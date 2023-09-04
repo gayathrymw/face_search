@@ -1,28 +1,30 @@
 import os
 import cv2
 import numpy as np
-import dlib
-import faiss
+from mtcnn import MTCNN
+from sklearn.metrics.pairwise import cosine_similarity
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from facenet import preprocessing
 
-# Define the threshold for similarity
-SIMILARITY_THRESHOLD = 0.5
+COSINE_THRESHOLD = 0.5
 
-def extract_embeddings(face_recognizer, aligned_face):
-    embedding = face_recognizer.compute_face_descriptor(aligned_face)
-    return np.array(embedding)
+def extract_embeddings(face_net, aligned_face):
+    # Preprocess the image for FaceNet
+    aligned_face = preprocessing.prewhiten(aligned_face)
+    aligned_face = cv2.resize(aligned_face, (160, 160))
+    
+    # Expand dimensions to match FaceNet model input shape
+    aligned_face = np.expand_dims(aligned_face, axis=0)
+    
+    # Generate embeddings
+    embedding = face_net.predict(aligned_face)
+    
+    return embedding
 
-def recognize_face(image, face_detector):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    faces = face_detector(gray)
+def recognize_face(image, mtcnn_detector):
+    faces = mtcnn_detector.detect_faces(image)
     return faces
-
-def align_face(image, face):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    shape_predictor = dlib.shape_predictor("model/shape_data")
-    landmarks = shape_predictor(gray, face)
-
-    aligned_face = dlib.get_face_chip(image, landmarks)
-    return aligned_face
 
 def load_embeddings(embeddings_dir):
     embeddings = {}
@@ -33,85 +35,78 @@ def load_embeddings(embeddings_dir):
             embeddings[user_id] = embedding
     return embeddings
 
-def build_faiss_index(embeddings):
-    # Create a Faiss index and add reference embeddings to it
-    d = len(list(embeddings.values())[0])  # Dimension of the embeddings
-    index = faiss.IndexFlatL2(d)  # Use L2 (Euclidean) distance
-
-    embeddings_list = list(embeddings.values())
-    embeddings_array = np.array(embeddings_list).astype('float32')
-    
-    index.add(embeddings_array)
-
-    return index
-
-def search_faiss_index(index, query_embedding):
-    # Search for similar embeddings in the Faiss index
-    D, I = index.search(np.array([query_embedding]).astype('float32'), index.ntotal)
-
-    return D[0], I[0]
+def match_faces(embeddings, query_embedding):
+    similarities = {}
+    for user_id, reference_embedding in embeddings.items():
+        similarity = cosine_similarity(
+            [query_embedding], [reference_embedding])[0][0]
+        similarities[user_id] = similarity
+    return similarities
 
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Saugat Malla_Image_42.jpg'
+    query_image_path = 'eval/sidhiq3.jpeg'
 
-    face_detector = dlib.get_frontal_face_detector()
-    face_recognizer = dlib.face_recognition_model_v1('model/data')
-
-    embeddings = load_embeddings(embeddings_dir)
+    mtcnn_detector = MTCNN()
+    face_net = load_model('path_to_facenet_model')  # Replace with the path to your FaceNet model
     
     if not os.path.exists(embeddings_dir):
         os.makedirs(embeddings_dir)
 
+    # Process the dataset images and extract embeddings
     for filename in os.listdir(dataset_dir):
         if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
-            user_id = os.path.splitext(filename)[0]
-            if user_id in embeddings:
-                continue
-            
             image_path = os.path.join(dataset_dir, filename)
             image = cv2.imread(image_path)
-            faces = recognize_face(image, face_detector)
+            faces = recognize_face(image, mtcnn_detector)
 
             if not faces:
+                print(f"No faces found in {filename}. Skipping.")
                 continue
 
-            aligned_face = align_face(image, faces[0])
-            embedding = extract_embeddings(face_recognizer, aligned_face)
+            x, y, w, h = faces[0]['box']
+            face = image[y:y+h, x:x+w]
+            aligned_face = cv2.resize(face, (160, 160))  # Resize for FaceNet
 
+            embedding = extract_embeddings(face_net, aligned_face)
+
+            user_id = os.path.splitext(filename)[0]
             embedding_path = os.path.join(embeddings_dir, f"{user_id}.npy")
             np.save(embedding_path, embedding)
 
             print(f"Embedding saved for {filename}")
 
+    # Load and preprocess the query image
     query_image = cv2.imread(query_image_path)
-    query_faces = recognize_face(query_image, face_detector)
+    faces = recognize_face(query_image, mtcnn_detector)
 
-    if not query_faces:
+    if not faces:
+        print("No faces found in the query image.")
         return
 
-    aligned_face = align_face(query_image, query_faces[0])
-    query_embedding = extract_embeddings(face_recognizer, aligned_face)
+    x, y, w, h = faces[0]['box']
+    query_face = query_image[y:y+h, x:x+w]
+    aligned_face = cv2.resize(query_face, (160, 160))  # Resize for FaceNet
+    query_embedding = extract_embeddings(face_net, aligned_face)
 
-    # Build the Faiss index
-    index = build_faiss_index(embeddings)
+    # Match query embedding with dataset embeddings
+    embeddings = load_embeddings(embeddings_dir)
+    similarities = match_faces(embeddings, query_embedding)
 
-    # Search for similar faces in the Faiss index
-    distances, indices = search_faiss_index(index, query_embedding)
+    sorted_similarities = sorted(
+        similarities.items(), key=lambda x: x[1], reverse=True)
+
+    cv2.imshow("Query Image", query_image)
 
     print("Similar images:")
-    for i, idx in enumerate(indices):
-        similarity = distances[i]  # Using L2 (Euclidean) distance as similarity
-        if similarity <= SIMILARITY_THRESHOLD:
-            user_id = os.path.splitext(os.listdir(dataset_dir)[idx])[0]
+    for user_id, similarity in sorted_similarities:
+        if similarity >= COSINE_THRESHOLD:
             print(f"User ID: {user_id}, Similarity: {similarity:.4f}")
 
             similar_image_path = os.path.join(dataset_dir, user_id + '.jpg')
             similar_image = cv2.imread(similar_image_path)
-
             print(f"Similar Image Filename: {user_id}.jpg")
-
             cv2.imshow("Similar Image", similar_image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
