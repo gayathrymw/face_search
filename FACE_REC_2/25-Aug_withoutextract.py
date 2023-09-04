@@ -42,7 +42,7 @@ def match_faces(embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/mamm.jpg'
+    query_image_path = 'eval/VR3.png'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -79,7 +79,7 @@ def main():
     query_faces = recognize_face(query_image, face_detector)
 
     if not query_faces:
-        #print("No faces found in the query image.")
+        print("No faces found in the query image.")
         return
 
     aligned_face = align_face(query_image, query_faces[0])
@@ -103,6 +103,7 @@ def main():
             print(f"Similar Image Filename: {user_id}.jpg")
 
             cv2.imshow("Similar Image", similar_image)
+            #cv2.resize(similar_image, (100, 100))
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             break
