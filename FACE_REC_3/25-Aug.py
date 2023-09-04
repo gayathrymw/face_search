@@ -52,7 +52,6 @@ def main():
     if not os.path.exists(embeddings_dir):
         os.makedirs(embeddings_dir)
 
-    # Process the dataset images and extract embeddings
     for filename in os.listdir(dataset_dir):
         if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
             image_path = os.path.join(dataset_dir, filename)
@@ -72,7 +71,6 @@ def main():
 
             print(f"Embedding saved for {filename}")
 
-    # Load and preprocess the query image
     query_image = cv2.imread(query_image_path)
     query_faces = recognize_face(query_image, face_detector)
 
@@ -83,7 +81,6 @@ def main():
     aligned_face = align_face(query_image, query_faces[0])
     query_embedding = extract_embeddings(face_recognizer, aligned_face)
 
-    # Match query embedding with dataset embeddings
     embeddings = load_embeddings(embeddings_dir)
     similarities = match_faces(embeddings, query_embedding)
 

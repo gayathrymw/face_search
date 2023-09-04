@@ -3,11 +3,14 @@ import cv2
 import numpy as np
 import dlib
 from sklearn.metrics.pairwise import cosine_similarity
+import faiss
+
 
 COSINE_THRESHOLD = 0.5
 
 def extract_embeddings(face_recognizer, aligned_face):
     embedding = face_recognizer.compute_face_descriptor(aligned_face)
+    #print("hai")
     return np.array(embedding)
 
 def recognize_face(image, face_detector):
@@ -22,7 +25,6 @@ def align_face(image, face):
 
     aligned_face = dlib.get_face_chip(image, landmarks)
     return aligned_face
-
 def load_embeddings(embeddings_dir):
     embeddings = {}
     for filename in os.listdir(embeddings_dir):
@@ -31,6 +33,7 @@ def load_embeddings(embeddings_dir):
             embedding = np.load(os.path.join(embeddings_dir, filename))
             embeddings[user_id] = embedding
     return embeddings
+
 def match_faces(embeddings, query_embedding):
     similarities = {}
     for user_id, reference_embedding in embeddings.items():
@@ -39,10 +42,25 @@ def match_faces(embeddings, query_embedding):
         similarities[user_id] = similarity
     return similarities
 
+# def match_faces(embeddings, query_embedding):
+#     reference_embeddings = np.array(list(embeddings.values()))
+#     index = faiss.IndexFlatL2(reference_embeddings.shape[1])
+#     index.add(reference_embeddings.astype('float32'))
+
+#     query_embedding = np.array([query_embedding]).astype('float32')
+#     k = len(embeddings)
+#     D, I = index.search(query_embedding, k)
+
+#     similarities = {}
+#     for distance, user_id in zip(D[0], I[0]):
+#         similarity = 1 / (1 + distance)  
+#         similarities[user_id] = similarity
+    
+#     return similarities
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/7ad44b0a03.jpg'
+    query_image_path = 'eval/mamm.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -90,9 +108,8 @@ def main():
     sorted_similarities = sorted(
         similarities.items(), key=lambda x: x[1], reverse=True)
     
-    cv2.imshow("Query Image", query_image)
-
-    print("Similar images:")
+    # cv2.imshow("Query Image", query_image)
+    #print("hai")
     for user_id, similarity in sorted_similarities:
         if similarity >= COSINE_THRESHOLD:
             print(f"User ID: {user_id}, Similarity: {similarity:.4f}")
