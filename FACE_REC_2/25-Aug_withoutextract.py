@@ -43,7 +43,11 @@ def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     query_image_path = 'eval/mamm.jpg'
+=======
+    query_image_path = 'eval/Sandeep Chhetri_Image_40.jpg'
+>>>>>>> Stashed changes
 
 =======
     query_image_path = 'eval/valen1.jpeg'

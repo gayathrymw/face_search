@@ -44,9 +44,13 @@ def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     query_image_path = 'eval/Gagan Thapa_Image_6.jpg'
 =======
     query_image_path = 'eval/sidhiq3.jpeg'
+>>>>>>> Stashed changes
+=======
+    query_image_path = 'dataset/Deepika_Padukone_Cannes_2018_(cropped).jpg'
 >>>>>>> Stashed changes
 
     face_detector = dlib.get_frontal_face_detector()
