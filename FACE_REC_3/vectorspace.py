@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import dlib
 from sklearn.neighbors import NearestNeighbors
+import time
 
 COSINE_THRESHOLD = 0.5
 
@@ -92,4 +93,6 @@ def main():
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
+    start=time.time()
     main()
+    print(start-time.time())
