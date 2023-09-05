@@ -49,8 +49,7 @@ def match_faces_with_kdtree(tree, query_embedding, user_ids, k=5):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/357ceb55cf.jpg'
-
+    query_image_path = 'eval/deepika-padukone-cannes-2022-main_7_202209.jpg'
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
 
@@ -104,7 +103,7 @@ def main():
             similar_image = cv2.imread(similar_image_path)
             cv2.imshow("Similar Image", similar_image)
             end_time = time.time()
-            print(f"Algorithm took {end_time - start_time:.4f} seconds to execute")
+            print(f"Algorithm kdtree took {end_time - start_time:.4f} seconds to execute")
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             break

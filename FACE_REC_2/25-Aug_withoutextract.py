@@ -48,7 +48,7 @@ def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
 
-    query_image_path = 'eval/357ceb55cf.jpg'
+    query_image_path = 'eval/deepika-padukone-cannes-2022-main_7_202209.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -111,7 +111,7 @@ def main():
             cv2.imshow("Similar Image", similar_image)
             #cv2.resize(similar_image, (100, 100))
             end_time = time.time() 
-            print(f"Algorithm took {end_time - start_time:.4f} seconds to execute")
+            print(f"Algorithm linear dlib took {end_time - start_time:.4f} seconds to execute")
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             break

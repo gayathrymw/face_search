@@ -58,7 +58,7 @@ X = np.array(stored_embeddings)
 
 knn = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(X) 
 
-query_image_path = 'eval/4d42a56b9c.jpg'
+query_image_path = 'eval/Manisha Koirala_3.jpg'
 query_image = cv2.imread(query_image_path)
 query_embedding = get_face_embedding(query_image_path)
 cv2.imshow("Query Image", query_image)
@@ -78,7 +78,7 @@ ans = np.load('embeddings.npy')
 cv2.imshow("Matched Face", img)
 
 end_time = time.time() 
-print(f"Algorithm took {end_time - start_time:.4f} seconds to execute")
+print(f"Algorithm vectospace knn took {end_time - start_time:.4f} seconds to execute")
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
