@@ -1,3 +1,7 @@
+import time
+
+start_time = time.time()
+
 import os
 import cv2
 import numpy as np
@@ -16,7 +20,7 @@ def recognize_face(image, face_detector):
     return faces
 
 def align_face(image, face):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)      
     shape_predictor = dlib.shape_predictor("model/shape_data")
     landmarks = shape_predictor(gray, face)
 
@@ -44,7 +48,7 @@ def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
 
-    query_image_path = 'eval/VR3.png'
+    query_image_path = 'eval/357ceb55cf.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -106,9 +110,13 @@ def main():
 
             cv2.imshow("Similar Image", similar_image)
             #cv2.resize(similar_image, (100, 100))
+            end_time = time.time() 
+            print(f"Algorithm took {end_time - start_time:.4f} seconds to execute")
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             break
 
 if __name__ == '__main__':
     main()
+
+
