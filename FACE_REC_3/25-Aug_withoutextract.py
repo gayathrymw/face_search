@@ -43,26 +43,13 @@ def match_faces(embeddings, query_embedding):
         similarities[user_id] = similarity
     return similarities
 
-# def match_faces(embeddings, query_embedding):
-#     reference_embeddings = np.array(list(embeddings.values()))
-#     index = faiss.IndexFlatL2(reference_embeddings.shape[1])
-#     index.add(reference_embeddings.astype('float32'))
 
-#     query_embedding = np.array([query_embedding]).astype('float32')
-#     k = len(embeddings)
-#     D, I = index.search(query_embedding, k)
-
-#     similarities = {}
-#     for distance, user_id in zip(D[0], I[0]):
-#         similarity = 1 / (1 + distance)  
-#         similarities[user_id] = similarity
-#     return similarities
 
 def main():
 
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Udit Narayan_Image_10.jpg'
+    query_image_path = 'eval/Salon Basnet_3.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
