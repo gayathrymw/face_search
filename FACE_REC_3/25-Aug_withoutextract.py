@@ -43,9 +43,8 @@ def match_faces(embeddings, query_embedding):
         similarities[user_id] = similarity
     return similarities
 
-
-
 def main():
+    start=time.time()
 
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
@@ -113,10 +112,9 @@ def main():
             print("The time of execution of above program is :",(end-start) * 10**3, "ms")
 
             #cv2.resize(similar_image, (100, 100))
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-            break
-
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        break
 if __name__ == '__main__':
     main()
     
