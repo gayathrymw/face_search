@@ -48,7 +48,7 @@ def main():
 
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Tony_Blair_0144.jpg'
+    query_image_path = 'eval/Tom_Ridge_0033.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -108,10 +108,10 @@ def main():
             print(f"Similar Image Filename: {user_id}.jpg")
 
             cv2.imshow("Similar Image", similar_image)
-            end = time.time()
-            print("The time of execution of above program is :",(end-start) * 10**3, "ms")
-
+            
             #cv2.resize(similar_image, (100, 100))
+        end = time.time()
+        print("The time of execution of above program is :",(end-start) * 10**3, "ms")    
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         break

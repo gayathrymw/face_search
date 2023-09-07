@@ -4,11 +4,9 @@ import numpy as np
 import dlib
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
-
 import time
 
 COSINE_THRESHOLD = 0.5
-
 def extract_embeddings(face_recognizer, aligned_face):
     embedding = face_recognizer.compute_face_descriptor(aligned_face)
     return np.array(embedding)
@@ -54,9 +52,10 @@ def match_faces_in_cluster(cluster_embeddings, query_embedding):
     return similarities
 
 def main():
+    start = time.time()
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/adrewttate.jpg'
+    query_image_path = 'eval/Tom_Ridge_0033.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -78,7 +77,7 @@ def main():
 
     aligned_face = align_face(query_image, query_faces[0])
     query_embedding = extract_embeddings(face_recognizer, aligned_face)
-    start = time.time()
+
 
     cluster_similarities = {}
     for cluster_id, cluster_user_ids in cluster_mapping.items():
@@ -92,7 +91,7 @@ def main():
     most_similar_user_ids = cluster_mapping[most_similar_cluster]
 
     print("Most similar cluster:", most_similar_cluster)
-    print("User IDs in the cluster:", most_similar_user_ids)
+    # print("User IDs in the cluster:", most_similar_user_ids)
 
     cluster_embeddings = {user_id: embeddings[user_id] for user_id in most_similar_user_ids}
     similarities = match_faces_in_cluster(cluster_embeddings, query_embedding)
