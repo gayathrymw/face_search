@@ -47,7 +47,7 @@ def cluster_embeddings(embeddings, num_clusters):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Priyanka Karki_3.jpg'
+    query_image_path = 'eval/mohanlal.jpg'
     num_clusters = 5
     
     face_detector = dlib.get_frontal_face_detector()
