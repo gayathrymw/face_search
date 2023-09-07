@@ -49,7 +49,7 @@ def main():
 
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Salon Basnet_3.jpg'
+    query_image_path = 'eval/Tony_Blair_0144.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
