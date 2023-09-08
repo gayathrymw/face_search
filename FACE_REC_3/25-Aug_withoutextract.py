@@ -48,7 +48,7 @@ def main():
 
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Tom_Ridge_0033.jpg'
+    query_image_path = 'eval/2a6f553d0f.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -117,4 +117,3 @@ def main():
         break
 if __name__ == '__main__':
     main()
-    

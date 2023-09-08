@@ -61,7 +61,7 @@ def main():
     face_recognizer = dlib.face_recognition_model_v1('model/data')
 
     embeddings = load_embeddings(embeddings_dir)
-    cluster_mapping_path = 'data/cluster_mapping.npy'
+    cluster_mapping_path = 'eval/yama buddha_Image_53.jpg'
     num_clusters = 5 
     if os.path.exists(cluster_mapping_path):
         cluster_mapping = np.load(cluster_mapping_path, allow_pickle=True).item()
