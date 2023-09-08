@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 import time
 
 COSINE_THRESHOLD = 0.5
+
 def extract_embeddings(face_recognizer, aligned_face):
     embedding = face_recognizer.compute_face_descriptor(aligned_face)
     return np.array(embedding)
@@ -32,8 +33,9 @@ def load_embeddings(embeddings_dir):
             embeddings[user_id] = embedding
     return embeddings
 
-def kmeans_clustering(embeddings, num_clusters):
+def kmeans_clustering(embeddings):
     reference_embeddings = np.array(list(embeddings.values()))
+    num_clusters = 10  
     kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(reference_embeddings)
     cluster_labels = kmeans.labels_
     cluster_mapping = {}
@@ -52,22 +54,25 @@ def match_faces_in_cluster(cluster_embeddings, query_embedding):
     return similarities
 
 def main():
-    start = time.time()
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/Tom_Ridge_0033.jpg'
+    query_image_path = 'eval/yama buddha_Image_53.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
 
     embeddings = load_embeddings(embeddings_dir)
-    cluster_mapping_path = 'eval/yama buddha_Image_53.jpg'
-    num_clusters = 5 
-    if os.path.exists(cluster_mapping_path):
-        cluster_mapping = np.load(cluster_mapping_path, allow_pickle=True).item()
+    kmeans_model_path = 'data/cluster_mapping.npy'  
+
+    if os.path.exists(kmeans_model_path):
+        # Load the pre-trained K-means model
+        cluster_mapping = np.load(kmeans_model_path, allow_pickle=True).item()
     else:
-        cluster_mapping = kmeans_clustering(embeddings, num_clusters)
-        np.save(cluster_mapping_path, cluster_mapping)
+        # Perform K-means clustering and save the model
+        cluster_mapping = kmeans_clustering(embeddings)
+        np.save(kmeans_model_path, cluster_mapping)
+
+    # The rest of the code remains the same
     query_image = cv2.imread(query_image_path)
     query_faces = recognize_face(query_image, face_detector)
 
@@ -77,7 +82,7 @@ def main():
 
     aligned_face = align_face(query_image, query_faces[0])
     query_embedding = extract_embeddings(face_recognizer, aligned_face)
-
+    start = time.time()
 
     cluster_similarities = {}
     for cluster_id, cluster_user_ids in cluster_mapping.items():
@@ -91,12 +96,11 @@ def main():
     most_similar_user_ids = cluster_mapping[most_similar_cluster]
 
     print("Most similar cluster:", most_similar_cluster)
-    # print("User IDs in the cluster:", most_similar_user_ids)
+    print("User IDs in the cluster:", most_similar_user_ids)
 
     cluster_embeddings = {user_id: embeddings[user_id] for user_id in most_similar_user_ids}
     similarities = match_faces_in_cluster(cluster_embeddings, query_embedding)
     most_similar_user = max(similarities, key=similarities.get)
-
     print("Most similar user:", most_similar_user)
 
     most_similar_image_path = os.path.join(dataset_dir, most_similar_user + '.jpg')

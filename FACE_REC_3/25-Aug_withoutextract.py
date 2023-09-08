@@ -48,7 +48,7 @@ def main():
 
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/2a6f553d0f.jpg'
+    query_image_path = 'eval/Tony_Parker_0001.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')

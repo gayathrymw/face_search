@@ -55,7 +55,7 @@ def match_faces_in_cluster(cluster_embeddings, query_embedding):
 def main():
     dataset_dir = 'dataset'
     embeddings_dir = 'data/embeddings'
-    query_image_path = 'eval/2a6f553d0f.jpg'
+    query_image_path = 'eval/Tony_Parker_0001.jpg'
 
     face_detector = dlib.get_frontal_face_detector()
     face_recognizer = dlib.face_recognition_model_v1('model/data')
@@ -96,7 +96,6 @@ def main():
     cluster_embeddings = {user_id: embeddings[user_id] for user_id in most_similar_user_ids}
     similarities = match_faces_in_cluster(cluster_embeddings, query_embedding)
     most_similar_user = max(similarities, key=similarities.get)
-
     print("Most similar user:", most_similar_user)
 
     most_similar_image_path = os.path.join(dataset_dir, most_similar_user + '.jpg')
