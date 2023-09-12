@@ -1,90 +1,97 @@
 import os
 import cv2
 import numpy as np
+import dlib
 from annoy import AnnoyIndex
-import torch
-import torchvision.transforms as transforms
-import torchvision.models as models
-from sklearn.preprocessing import normalize
+import time
 
-# Step 1: Generate embeddings for all images in the dataset
-def generate_embeddings(dataset_folder, model, device):
-    image_paths = [os.path.join(dataset_folder, filename) for filename in os.listdir(dataset_folder)]
-    embeddings = []
+def extract_embeddings(face_recognizer, aligned_face):
+    embedding = face_recognizer.compute_face_descriptor(aligned_face)
+    return np.array(embedding)
 
-    # Set the model to evaluation mode
-    model.eval()
+def recognize_face(image, face_detector):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = face_detector(gray)
+    return faces
 
-    for image_path in image_paths:
-        image = cv2.imread(image_path)
-        image = cv2.resize(image, (224, 224))  # Resize if necessary
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+def align_face(image, face):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    shape_predictor = dlib.shape_predictor("model/shape_data")
+    landmarks = shape_predictor(gray, face)
+    aligned_face = dlib.get_face_chip(image, landmarks)
+    return aligned_face
 
-        # Preprocess the image
-        transform = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-        input_image = transform(image).unsqueeze(0).to(device)
-
-        # Generate the embedding
-        with torch.no_grad():
-            embedding = model(input_image).squeeze().cpu().numpy()
-        
-        embeddings.append(embedding)
-
-    embeddings = np.array(embeddings)
-    embeddings = normalize(embeddings)  # Normalize the embeddings
-
+def load_embeddings(embeddings_dir):
+    embeddings = {}
+    for filename in os.listdir(embeddings_dir):
+        if filename.endswith('.npy'):
+            user_id = os.path.splitext(filename)[0]
+            embedding = np.load(os.path.join(embeddings_dir, filename))
+            embeddings[user_id] = embedding
     return embeddings
 
-# Step 2: Build an Annoy index for embeddings
-def build_annoy_index(embeddings, num_trees=10):
-    num_dimensions = embeddings.shape[1]
-    annoy_index = AnnoyIndex(num_dimensions, metric='angular')  # You can also use 'euclidean' metric
+def build_annoy_index(embeddings):
+    embedding_dim = len(next(iter(embeddings.values())))
+    annoy_index = AnnoyIndex(embedding_dim, 'angular')
 
-    for i, embedding in enumerate(embeddings):
+    for i, embedding in enumerate(embeddings.values()):
         annoy_index.add_item(i, embedding)
 
-    annoy_index.build(num_trees)  # Build the index
-
+    annoy_index.build(len(embeddings))
     return annoy_index
 
-# Step 3: Query the index to find similar images
-def find_similar_images(query_embedding, annoy_index, num_neighbors=5):
+def find_most_similar_annoy(annoy_index, query_embedding):
+    num_neighbors = 5  
     similar_indices = annoy_index.get_nns_by_vector(query_embedding, num_neighbors)
+
     return similar_indices
 
-if __name__ == "__main__":
-    dataset_folder = 'dataset'
+def main():
+    start = time.time()
+    dataset_dir = 'dataset'
+    embeddings_dir = 'data/embeddings'
+    query_image_path = 'eval/shibu3.jpg'
+    face_detector = dlib.get_frontal_face_detector()
+    face_recognizer = dlib.face_recognition_model_v1('model/data')
 
-    # Load the pre-trained ResNet-50 model
-    resnet_model = models.resnet50(pretrained=True)
-    resnet_model = resnet_model.to('cuda' if torch.cuda.is_available() else 'cpu')  # Use GPU if available
+    embeddings = load_embeddings(embeddings_dir)
+    annoy_index_path = 'data/annoy_index.ann'  
 
-    embeddings = generate_embeddings(dataset_folder, resnet_model, resnet_model.device)
-    annoy_index = build_annoy_index(embeddings)
+    if os.path.exists(annoy_index_path):
+        annoy_index = AnnoyIndex(len(next(iter(embeddings.values()))), 'angular')
+        annoy_index.load(annoy_index_path)
+    else:
+        annoy_index = build_annoy_index(embeddings)
+        annoy_index.save(annoy_index_path)
 
-    # Replace this with the query image's path
-    query_image_path = 'eval/yama buddha_Image_53.jpg'
     query_image = cv2.imread(query_image_path)
-    query_image = cv2.cvtColor(query_image, cv2.COLOR_BGR2RGB)
+    query_faces = recognize_face(query_image, face_detector)
 
-    # Preprocess and generate the query image's embedding
-    transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    query_input_image = transform(query_image).unsqueeze(0).to(resnet_model.device)
-    query_embedding = resnet_model(query_input_image).squeeze().cpu().numpy()
-    query_embedding = normalize(np.array([query_embedding]))
+    if not query_faces:
+        print("No faces found in the query image.")
+        return
 
-    num_neighbors = 5  # Number of similar images to retrieve
-    similar_indices = find_similar_images(query_embedding[0], annoy_index, num_neighbors)
+    aligned_face = align_face(query_image, query_faces[0])
+    query_embedding = extract_embeddings(face_recognizer, aligned_face)
 
-    print("Similar Images:")
-    for idx in similar_indices:
-        similar_image_path = os.path.join(dataset_folder, os.listdir(dataset_folder)[idx])
-        print(similar_image_path)
+    similar_indices = find_most_similar_annoy(annoy_index, query_embedding)
+
+    if not similar_indices:
+        print("No similar image found.")
+        return
+
+    most_similar_user_ids = list(embeddings.keys())[similar_indices[0]]
+    print("Most similar user:", most_similar_user_ids)
+
+    most_similar_image_path = os.path.join(dataset_dir, most_similar_user_ids + '.jpg')
+    most_similar_image = cv2.imread(most_similar_image_path)
+
+    cv2.imshow("Most Similar Image", most_similar_image)
+    end = time.time()
+    print("The time of execution of the program is:", (end - start) * 10**3, "ms")
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main()
